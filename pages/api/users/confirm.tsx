@@ -1,35 +1,31 @@
-import { withIronSessionApiRoute } from "iron-session/next";
+//입력받은 토큰을 가진 사용자가 있는지 확인해서 있으면 userId를 req.session.user에 저장한다
 import { NextApiRequest, NextApiResponse } from "next";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import client from "@libs/server/client";
-
-declare module "iron-session" {
-  interface IronSessionData {
-    user?: {
-      id: number;
-    };
-  }
-}
+import { withApiSession } from "@libs/server/withSession";
 
 async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseType>
 ) {
   const { token } = req.body;
-  const exists = await client.token.findUnique({
+  const foundToken = await client.token.findUnique({
     where: {
       payload: token,
     },
   });
-  if (!exists) return res.status(404).end();
+  if (!foundToken) return res.status(404).end();
   req.session.user = {
-    id: exists.userId,
+    id: foundToken.userId,
   };
   await req.session.save();
-  res.status(200).end();
+  //토큰삭제
+  await client.token.deleteMany({
+    where: {
+      userId: foundToken.userId,
+    },
+  });
+  //결과보냄
+  res.json({ ok: true });
 }
-
-export default withIronSessionApiRoute(withHandler("POST", handler), {
-  cookieName: "zerosession",
-  password: "654654896546546548645654s863d541621354968465432",
-});
+export default withApiSession(withHandler("POST", handler));
