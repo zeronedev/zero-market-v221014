@@ -1,12 +1,10 @@
 //모든 페이지에서 useUser Hook을 사용하면 유저 프로필을 가져사 쓸 수 있다
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useSWR from "swr";
 
-const fetcher = (url: string) => fetch(url).then((resopnse) => resopnse.json());
-
 export default function useUser() {
-  const { data, error } = useSWR("/api/users/me", fetcher);
+  const { data, error } = useSWR("/api/users/me");
   const router = useRouter();
   useEffect(() => {
     if (data && !data.ok) {
